@@ -111,12 +111,8 @@ app.get("/oauth/callback", async (req, res) => {
         await prisma.user.create({
 
             data: {
-
                 id: userId,
-
                 refreshToken: refreshToken,
-
-                hubspotPortalId: portalId,
             },
         });
 
