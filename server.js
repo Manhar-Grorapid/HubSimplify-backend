@@ -5,8 +5,8 @@ const cors = require("cors");
 const axios = require("axios");
 const fs = require("fs");
 const crypto = require("crypto");
-
-const prisma = require("./prisma");
+const mongoose = require("mongoose");
+const User = require("./models/User");
 
 const transformWorkflow =
     require("./utils/transformWorkflow");
@@ -15,6 +15,13 @@ const app = express();
 
 app.use(cors());
 app.use(express.json());
+mongoose.connect(process.env.MONGO_URI)
+    .then(() => {
+        console.log("MongoDB Connected");
+    })
+    .catch((error) => {
+        console.log(error);
+    });
 
 const PORT = 4000;
 
@@ -108,12 +115,12 @@ app.get("/oauth/callback", async (req, res) => {
         // STORE USER IN DB
         // =====================================
 
-        await prisma.user.create({
+        await User.create({
 
-            data: {
-                id: userId,
-                refreshToken: refreshToken,
-            },
+            userId: userId,
+
+            refreshToken:
+                refreshToken,
         });
 
         console.log(
@@ -137,9 +144,16 @@ app.get("/oauth/callback", async (req, res) => {
             error.message
         );
 
-        res.status(500).send(
-            "OAuth failed"
+        console.log(
+            error.response?.data ||
+            error.message
         );
+
+        res.status(500).json({
+            error:
+                error.response?.data ||
+                error.message
+        });
     }
 
 });
@@ -181,11 +195,9 @@ app.get("/workflow/:id", async (req, res) => {
         // =====================================
 
         const user =
-            await prisma.user.findUnique({
+            await User.findOne({
 
-                where: {
-                    id: userId,
-                },
+                userId: userId,
             });
 
         if (!user) {
