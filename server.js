@@ -4,6 +4,8 @@ const express = require("express");
 const cors = require("cors");
 const axios = require("axios");
 const fs = require("fs");
+const prisma =
+    require("./prisma");
 
 const transformWorkflow =
     require("./utils/transformWorkflow");
@@ -14,7 +16,6 @@ app.use(cors());
 app.use(express.json());
 
 const PORT = 4000;
-let refreshToken = "";
 
 app.get("/", (req, res) => {
     res.send("Server running");
@@ -62,12 +63,25 @@ app.get("/oauth/callback", async (req, res) => {
                 },
             }
         );
-        refreshToken =
+
+        const refreshToken =
             response.data.refresh_token;
-        console.log(
-            "REFRESH TOKEN SAVED:",
-            refreshToken
-        );
+
+        await prisma.user.upsert({
+
+            where: {
+                id: "default-user",
+            },
+
+            update: {
+                refreshToken,
+            },
+
+            create: {
+                id: "default-user",
+                refreshToken,
+            },
+        });
         res.send(`
                 <h2>
                 HubSpot Connected Successfully
@@ -85,29 +99,64 @@ app.get("/oauth/callback", async (req, res) => {
 });
 
 // Workflow
+// Workflow
 app.get("/workflow/:id", async (req, res) => {
+
     console.log(
         "HEADERS:",
         req.headers
     );
+
     const workflowId =
         req.params.id;
+
     try {
-        // getting access token
+
+        // =====================================
+        // GET USER FROM DB
+        // =====================================
+
+        const user =
+            await prisma.user.findUnique({
+
+                where: {
+                    id: "default-user",
+                },
+            });
+
+        if (!user) {
+
+            return res.status(401).json({
+                error:
+                    "No connected account",
+            });
+        }
+
+        // =====================================
+        // GET ACCESS TOKEN
+        // =====================================
+
         const tokenResponse =
             await axios.post(
 
                 "https://api.hubapi.com/oauth/v1/token",
+
                 new URLSearchParams({
+
                     grant_type:
                         "refresh_token",
+
                     client_id:
                         process.env.CLIENT_ID,
+
                     client_secret:
                         process.env.CLIENT_SECRET,
+
                     refresh_token:
-                        refreshToken,
+                        user.refreshToken,
+
                 }),
+
                 {
                     headers: {
                         "Content-Type":
@@ -120,7 +169,7 @@ app.get("/workflow/:id", async (req, res) => {
             tokenResponse.data.access_token;
 
         console.log(
-            "ACCESS TOKEN: "
+            "ACCESS TOKEN RECEIVED"
         );
 
         // =====================================
@@ -139,13 +188,16 @@ app.get("/workflow/:id", async (req, res) => {
                     },
                 }
             );
+
         console.log(
             "WORKFLOW RESPONSE:",
             response.data
         );
 
         fs.writeFileSync(
+
             "./workflow.json",
+
             JSON.stringify(
                 response.data,
                 null,
@@ -168,6 +220,7 @@ app.get("/workflow/:id", async (req, res) => {
         );
 
         res.status(500).json({
+
             error:
                 error.response?.data ||
                 error.message,
