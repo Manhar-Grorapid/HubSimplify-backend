@@ -8,7 +8,9 @@ datasource db {
 }
 
 model User {
-  id           String   @id
-  refreshToken String
-  createdAt    DateTime @default(now())
+  id               String   @id
+  refreshToken     String
+  hubspotPortalId  Int?
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
 }

@@ -4,8 +4,9 @@ const express = require("express");
 const cors = require("cors");
 const axios = require("axios");
 const fs = require("fs");
-const prisma =
-    require("./prisma");
+const crypto = require("crypto");
+
+const prisma = require("./prisma");
 
 const transformWorkflow =
     require("./utils/transformWorkflow");
@@ -17,11 +18,18 @@ app.use(express.json());
 
 const PORT = 4000;
 
+// =====================================
+// ROOT
+// =====================================
+
 app.get("/", (req, res) => {
     res.send("Server running");
 });
 
-// Connect
+// =====================================
+// CONNECT
+// =====================================
+
 app.get("/connect", (req, res) => {
 
     const scopes = [
@@ -38,24 +46,45 @@ app.get("/connect", (req, res) => {
         `&scope=${encodeURIComponent(scopes)}`;
 
     res.redirect(authUrl);
+    ```
+
 });
 
-// Oauth callback
+// =====================================
+// OAUTH CALLBACK
+// =====================================
+
 app.get("/oauth/callback", async (req, res) => {
+
+```
     const code = req.query.code;
+
     try {
+
+        // =====================================
+        // EXCHANGE CODE FOR TOKENS
+        // =====================================
+
         const response = await axios.post(
+
             "https://api.hubapi.com/oauth/v1/token",
+
             new URLSearchParams({
+
                 grant_type: "authorization_code",
+
                 client_id:
                     process.env.CLIENT_ID,
+
                 client_secret:
                     process.env.CLIENT_SECRET,
+
                 redirect_uri:
                     process.env.REDIRECT_URI,
+
                 code: code,
             }),
+
             {
                 headers: {
                     "Content-Type":
@@ -67,41 +96,68 @@ app.get("/oauth/callback", async (req, res) => {
         const refreshToken =
             response.data.refresh_token;
 
-        await prisma.user.upsert({
+        const portalId =
+            response.data.hub_id;
 
-            where: {
-                id: "default-user",
-            },
+        // =====================================
+        // GENERATE UNIQUE USER ID
+        // =====================================
 
-            update: {
-                refreshToken,
-            },
+        const userId =
+            crypto.randomUUID();
 
-            create: {
-                id: "default-user",
-                refreshToken,
+        // =====================================
+        // STORE USER IN DB
+        // =====================================
+
+        await prisma.user.create({
+
+            data: {
+
+                id: userId,
+
+                refreshToken: refreshToken,
+
+                hubspotPortalId: portalId,
             },
         });
-        res.send(`
-                <h2>
-                HubSpot Connected Successfully
-                </h2>
 
-                <p>
-                You can close this tab.
-                </p>
-        `);
+        console.log(
+            "USER CREATED:",
+            userId
+        );
+
+        // =====================================
+        // REDIRECT TO FRONTEND
+        // =====================================
+
+        res.redirect(
+
+            `https://hub-simplify-frontend.vercel.app/oauth-success?userId=${userId}`
+        );
+
     } catch (error) {
+
+        console.log(
+            error.response?.data ||
+            error.message
+        );
+
         res.status(500).send(
             "OAuth failed"
         );
     }
+    ```
+
 });
 
-// Workflow
-// Workflow
+// =====================================
+// FETCH WORKFLOW
+// =====================================
+
 app.get("/workflow/:id", async (req, res) => {
 
+```
     console.log(
         "HEADERS:",
         req.headers
@@ -110,7 +166,23 @@ app.get("/workflow/:id", async (req, res) => {
     const workflowId =
         req.params.id;
 
+    const userId =
+        req.headers["x-user-id"];
+
     try {
+
+        // =====================================
+        // VALIDATE USER ID
+        // =====================================
+
+        if (!userId) {
+
+            return res.status(401).json({
+
+                error:
+                    "Missing userId",
+            });
+        }
 
         // =====================================
         // GET USER FROM DB
@@ -120,17 +192,19 @@ app.get("/workflow/:id", async (req, res) => {
             await prisma.user.findUnique({
 
                 where: {
-                    id: "default-user",
+                    id: userId,
                 },
             });
 
         if (!user) {
 
-            return res.status(401).json({
+            return res.status(404).json({
+
                 error:
-                    "No connected account",
+                    "User not found",
             });
         }
+
         console.log(
             "DB USER:",
             user
@@ -187,6 +261,7 @@ app.get("/workflow/:id", async (req, res) => {
 
                 {
                     headers: {
+
                         Authorization:
                             `Bearer ${accessToken}`,
                     },
@@ -197,6 +272,10 @@ app.get("/workflow/:id", async (req, res) => {
             "WORKFLOW RESPONSE:",
             response.data
         );
+
+        // =====================================
+        // SAVE RAW WORKFLOW
+        // =====================================
 
         fs.writeFileSync(
 
@@ -209,6 +288,10 @@ app.get("/workflow/:id", async (req, res) => {
             )
         );
 
+        // =====================================
+        // TRANSFORM WORKFLOW
+        // =====================================
+
         const transformed =
             transformWorkflow(
                 response.data
@@ -219,6 +302,7 @@ app.get("/workflow/:id", async (req, res) => {
     } catch (error) {
 
         console.log(
+
             error.response?.data ||
             error.message
         );
@@ -230,11 +314,16 @@ app.get("/workflow/:id", async (req, res) => {
                 error.message,
         });
     }
+
 });
 
-app.listen(PORT, () => {
+// =====================================
+// START SERVER
+// =====================================
 
+app.listen(PORT, () => {
     console.log(
         `Server running on port ${PORT}`
     );
-});
+
+})
