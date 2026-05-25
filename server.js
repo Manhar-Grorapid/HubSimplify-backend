@@ -129,11 +129,10 @@ app.get("/oauth/callback", async (req, res) => {
         // REDIRECT TO FRONTEND
         // =====================================
 
-        // res.redirect(
+        res.redirect(
 
-        //     `https://hub-simplify-frontend.vercel.app/oauth-success?userId=${userId}`
-        // );
-        res.send("NEW DEPLOY ACTIVE");
+            `https://hub-simplify-frontend.vercel.app/oauth-success?userId=${userId}`
+        );
 
     } catch (error) {
 
