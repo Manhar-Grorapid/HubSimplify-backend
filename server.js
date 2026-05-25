@@ -46,7 +46,6 @@ app.get("/connect", (req, res) => {
         `&scope=${encodeURIComponent(scopes)}`;
 
     res.redirect(authUrl);
-    ```
 
 });
 
@@ -56,7 +55,6 @@ app.get("/connect", (req, res) => {
 
 app.get("/oauth/callback", async (req, res) => {
 
-```
     const code = req.query.code;
 
     try {
@@ -147,7 +145,6 @@ app.get("/oauth/callback", async (req, res) => {
             "OAuth failed"
         );
     }
-    ```
 
 });
 
@@ -157,7 +154,6 @@ app.get("/oauth/callback", async (req, res) => {
 
 app.get("/workflow/:id", async (req, res) => {
 
-```
     console.log(
         "HEADERS:",
         req.headers
