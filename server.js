@@ -131,6 +131,10 @@ app.get("/workflow/:id", async (req, res) => {
                     "No connected account",
             });
         }
+        console.log(
+            "DB USER:",
+            user
+        );
 
         // =====================================
         // GET ACCESS TOKEN
