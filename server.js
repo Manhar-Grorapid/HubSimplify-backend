@@ -13,7 +13,15 @@ const transformWorkflow =
 
 const app = express();
 
-app.use(cors());
+app.use(
+    cors({
+        origin: "*",
+        allowedHeaders: [
+            "Content-Type",
+            "x-user-id",
+        ],
+    })
+);
 app.use(express.json());
 mongoose.connect(process.env.MONGO_URI)
     .then(() => {
