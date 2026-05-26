@@ -188,7 +188,7 @@ app.get("/workflow/:id", async (req, res) => {
         req.params.id;
 
     const userId =
-        req.query.userId;
+        req.headers["x-user-id"];
 
 
     try {
