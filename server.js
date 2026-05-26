@@ -133,7 +133,7 @@ app.get("/oauth/callback", async (req, res) => {
         // =====================================
 
         res.redirect(
-            `https://hub-simplify-frontend-git-auth-rework-grorapid-labs.vercel.app/oauth-success?userId=${userId}`
+            `chrome-extension://lhpepmbjjemlonoekeneehonajfdklnc/success.html?userId=${userId}`
         );
 
     } catch (error) {
