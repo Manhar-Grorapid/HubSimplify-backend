@@ -16,12 +16,21 @@ const app = express();
 app.use(
     cors({
         origin: "*",
+        methods: [
+            "GET",
+            "POST",
+            "PUT",
+            "DELETE",
+            "OPTIONS",
+        ],
         allowedHeaders: [
             "Content-Type",
+            "Authorization",
             "x-user-id",
         ],
     })
 );
+app.options("*", cors());
 app.use(express.json());
 mongoose.connect(process.env.MONGO_URI)
     .then(() => {
