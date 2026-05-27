@@ -208,44 +208,37 @@ function transformWorkflow(workflow) {
         });
     }
 
-    const purpose =
-        `${workflow.actions.length} workflow actions detected`;
+    const summary = {
 
-    const checks = [];
+        totalActions:
+            workflow.actions.length,
 
-    semanticSteps.forEach((step) => {
+        totalBranches:
+            workflow.actions.filter(
+                (a) => a.type === "LIST_BRANCH"
+            ).length,
 
-        let cleaned = step.condition;
+        actionTypes: [
+            ...new Set(
+                workflow.actions.map((a) =>
+                    getReadableType(a)
+                )
+            ),
+        ],
 
-        if (!checks.includes(cleaned)) {
-            checks.push(cleaned);
-        }
-    });
-
-    const actions = [];
-
-    semanticSteps.forEach((step) => {
-
-        if (!actions.includes(step.action)) {
-
-            actions.push(step.action);
-        }
-    });
+        workflowType:
+            workflow.actions.some(
+                (a) => a.type === "LIST_BRANCH"
+            )
+                ? "Branching Workflow"
+                : "Linear Workflow",
+    };
 
     return {
-
         workflowName: workflow.name,
-
-        summary: {
-            purpose,
-            checks,
-            actions,
-        },
-
+        summary,
         semanticSteps,
-
         nodes,
-
         edges,
     };
 }
