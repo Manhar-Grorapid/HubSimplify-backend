@@ -38,15 +38,13 @@ function getReadableType(action) {
         return "Webhook";
     }
 
-    // generic single connection fallback
+    // generic fallback
     if (action.type === "SINGLE_CONNECTION") {
 
-        // property updates
         if (action.fields?.property_name) {
             return "Update Property";
         }
 
-        // email-related hints
         if (
             action.fields?.emailId ||
             action.fields?.email_id
@@ -60,50 +58,9 @@ function getReadableType(action) {
     return action.type;
 }
 
-function generateReadableFlow(nodes, edges) {
-
-    const lines = [];
-
-    edges.forEach((edge) => {
-
-        const fromNode =
-            nodes.find((n) => n.id === edge.from);
-
-        const toNode =
-            nodes.find((n) => n.id === edge.to);
-
-        if (!fromNode || !toNode) return;
-
-        if (
-            edge.label !== "Next" &&
-            edge.label !== "Default"
-        ) {
-
-            lines.push(
-                `IF ${edge.label} → ${toNode.label}`
-            );
-
-        } else {
-
-            // skip noisy branch mechanics
-            if (
-                fromNode.label === "Branch Logic"
-            ) {
-                return;
-            }
-
-            lines.push(
-                `${fromNode.label} → ${toNode.label}`
-            );
-        }
-    });
-
-    return lines;
-}
-
 function transformWorkflow(workflow) {
 
-    const nodes = workflow.actions.map((action) => {
+    const nodes = workflow.actions.map((action, index) => {
 
         let label = getReadableType(action);
 
@@ -128,9 +85,19 @@ function transformWorkflow(workflow) {
         }
 
         return {
-            id: action.actionId,
-            label,
-            type: action.type,
+
+            id: String(action.actionId),
+
+            position: {
+                x: 250,
+                y: index * 180,
+            },
+
+            data: {
+                label,
+            },
+
+            type: "default",
         };
     });
 
@@ -138,7 +105,7 @@ function transformWorkflow(workflow) {
 
     workflow.actions.forEach((action) => {
 
-        // normal/default connections
+        // normal/default connection
         const nextActionId =
             action.connection?.nextActionId ||
             action.defaultBranch?.nextActionId;
@@ -146,12 +113,19 @@ function transformWorkflow(workflow) {
         if (nextActionId) {
 
             edges.push({
-                from: action.actionId,
-                to: nextActionId,
+
+                id: `e-${action.actionId}-${nextActionId}`,
+
+                source: String(action.actionId),
+
+                target: String(nextActionId),
+
                 label:
                     action.type === "LIST_BRANCH"
                         ? "Default"
                         : "Next",
+
+                animated: true,
             });
         }
 
@@ -166,17 +140,21 @@ function transformWorkflow(workflow) {
                 if (!nextId) return;
 
                 edges.push({
-                    from: action.actionId,
-                    to: nextId,
+
+                    id: `e-${action.actionId}-${nextId}`,
+
+                    source: String(action.actionId),
+
+                    target: String(nextId),
+
                     label:
                         branch.branchName || "Branch",
+
+                    animated: true,
                 });
             });
         }
     });
-
-    const readableFlow =
-        generateReadableFlow(nodes, edges);
 
     // semantic business-readable steps
     const semanticSteps = [];
@@ -191,13 +169,18 @@ function transformWorkflow(workflow) {
         }
 
         const targetNode =
-            nodes.find((n) => n.id === edge.to);
+            nodes.find(
+                (n) => n.id === edge.target
+            );
 
         if (!targetNode) return;
 
         semanticSteps.push({
+
             condition: edge.label,
-            action: targetNode.label,
+
+            action:
+                targetNode.data.label,
         });
     });
 
@@ -233,6 +216,7 @@ function transformWorkflow(workflow) {
     });
 
     return {
+
         workflowName: workflow.name,
 
         summary: {
@@ -244,6 +228,7 @@ function transformWorkflow(workflow) {
         semanticSteps,
 
         nodes,
+
         edges,
     };
 }
