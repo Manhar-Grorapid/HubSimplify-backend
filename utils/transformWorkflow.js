@@ -93,6 +93,7 @@ function transformWorkflow(workflow) {
                     index === 0
                         ? 400
                         : 150 + (index - 1) * 220,
+
                 y:
                     index === 0
                         ? 80
@@ -165,6 +166,7 @@ function transformWorkflow(workflow) {
     // semantic business-readable steps
     const semanticSteps = [];
 
+    // branch-based workflows
     edges.forEach((edge) => {
 
         if (
@@ -189,6 +191,22 @@ function transformWorkflow(workflow) {
                 targetNode.data.label,
         });
     });
+
+    // fallback for simple workflows
+    if (semanticSteps.length === 0) {
+
+        workflow.actions.forEach((action, index) => {
+
+            semanticSteps.push({
+
+                condition:
+                    `Step ${index + 1}`,
+
+                action:
+                    getReadableType(action),
+            });
+        });
+    }
 
     const purpose =
         "Adds data quality tags for missing company fields";
