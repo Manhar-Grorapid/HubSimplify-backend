@@ -209,16 +209,13 @@ function transformWorkflow(workflow) {
     }
 
     const purpose =
-        "Adds data quality tags for missing company fields";
+        `${workflow.actions.length} workflow actions detected`;
 
     const checks = [];
 
     semanticSteps.forEach((step) => {
 
-        let cleaned =
-            step.condition
-                .replace("No ", "")
-                .replace("If ", "");
+        let cleaned = step.condition;
 
         if (!checks.includes(cleaned)) {
             checks.push(cleaned);
@@ -229,13 +226,9 @@ function transformWorkflow(workflow) {
 
     semanticSteps.forEach((step) => {
 
-        let cleaned =
-            step.action
-                .replace("Update Property → ", "")
-                .replace("company_tags = ", "Add ");
+        if (!actions.includes(step.action)) {
 
-        if (!actions.includes(cleaned)) {
-            actions.push(cleaned);
+            actions.push(step.action);
         }
     });
 
