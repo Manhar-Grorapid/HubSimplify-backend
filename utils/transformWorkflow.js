@@ -89,8 +89,14 @@ function transformWorkflow(workflow) {
             id: String(action.actionId),
 
             position: {
-                x: 250,
-                y: index * 180,
+                x:
+                    index === 0
+                        ? 400
+                        : 150 + (index - 1) * 220,
+                y:
+                    index === 0
+                        ? 80
+                        : 320,
             },
 
             data: {
