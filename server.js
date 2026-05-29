@@ -151,6 +151,10 @@ app.get("/oauth/callback", async (req, res) => {
         res.redirect(
             `chrome-extension://lhpepmbjjemlonoekeneehonajfdklnc/success.html?userId=${userId}`
         );
+        console.log(
+            "REDIRECT URL:",
+            `chrome-extension://lhpepmbjjemlonoekeneehonajfdklnc/success.html?userId=${userId}`
+        );
 
     } catch (error) {
 
