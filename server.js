@@ -347,6 +347,9 @@ app.get("/validate-user", async (req, res) => {
         userId,
     });
 
+    console.log("USER:", user);
+    console.log("PORTAL ID:", user.portalId);
+
     if (!user) {
         return res.json({
             valid: false,
