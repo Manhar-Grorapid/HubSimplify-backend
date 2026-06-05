@@ -11,6 +11,12 @@ const UserSchema = new mongoose.Schema({
         type: String,
         required: true,
     },
+
+    portalId: {
+        type: String,
+        required: true,
+    },
+
 });
 
 module.exports =

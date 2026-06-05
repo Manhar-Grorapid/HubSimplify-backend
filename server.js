@@ -132,11 +132,9 @@ app.get("/oauth/callback", async (req, res) => {
         // =====================================
 
         await User.create({
-
-            userId: userId,
-
-            refreshToken:
-                refreshToken,
+            userId,
+            refreshToken,
+            portalId,
         });
 
         console.log(
@@ -338,6 +336,27 @@ app.get("/workflow/:id", async (req, res) => {
                 error.message,
         });
     }
+
+});
+
+app.get("/validate-user", async (req, res) => {
+
+    const userId = req.headers["x-user-id"];
+
+    const user = await User.findOne({
+        userId,
+    });
+
+    if (!user) {
+        return res.json({
+            valid: false,
+        });
+    }
+
+    res.json({
+        valid: true,
+        portalId: user.portalId,
+    });
 
 });
 

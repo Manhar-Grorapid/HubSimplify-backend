@@ -2,7 +2,7 @@ function getReadableType(action) {
 
     // branch logic
     if (action.type === "LIST_BRANCH") {
-        return "Branch Logic";
+        return "Decision";
     }
 
     // property updates
@@ -12,7 +12,7 @@ function getReadableType(action) {
 
     // enroll workflow
     if (action.actionTypeId === "0-15") {
-        return "Enroll In Workflow";
+        return "Enroll Workflow";
     }
 
     // send internal email
@@ -55,7 +55,7 @@ function getReadableType(action) {
         return "Workflow Action";
     }
 
-    return action.type;
+    return "Workflow Action";
 }
 
 function transformWorkflow(workflow) {
@@ -184,23 +184,20 @@ function transformWorkflow(workflow) {
         if (!targetNode) return;
 
         semanticSteps.push({
-
-            condition: edge.label,
-
-            action:
-                targetNode.data.label,
+            condition: `If ${edge.label}`,
+            action: targetNode.data.label,
         });
     });
 
     // fallback for simple workflows
     if (semanticSteps.length === 0) {
 
-        workflow.actions.forEach((action, index) => {
+        workflow.actions.forEach((action) => {
 
             semanticSteps.push({
 
                 condition:
-                    `Step ${index + 1}`,
+                    getReadableType(action),
 
                 action:
                     getReadableType(action),
